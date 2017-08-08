@@ -27,7 +27,7 @@ qupload_config_dir = "config/"
 
 def init():
     os.system('./qshell account {} {}'.format(ak, sk))
-    if not os.exists(qupload_config_dir):
+    if not os.path.exists(qupload_config_dir):
         os.mkdir(qupload_config_dir)
 
 
