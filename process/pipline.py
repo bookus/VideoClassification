@@ -1,12 +1,10 @@
 import os
-import asyncio
 import sys
 import multiprocessing
 import time
 import json
 import shutil
 
-queue = asyncio.Queue()
 
 bucket = "mmimg"
 ak = "8MbTywnGQZ75BnWL9S1P8PZn-9wCqy6fIs4MyllI"
