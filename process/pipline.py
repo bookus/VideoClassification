@@ -13,10 +13,10 @@ sc = "XXXXXXX"
 train_path = "lsvc2017/lsvc_train.txt"
 val_path = "lsvc2017/lsvc_val.txt"
 
-trainval_map = {}
 
 train_val_path = "/workspace/data/video/videos/trainval"
 
+trainval_map = {}
 
 def split(line):
     return line.split(',', 1)
@@ -33,13 +33,11 @@ class Consumer(multiprocessing.Process):
         while True:
             next_task = self.task_queue.get()
             if next_task is None:
-                # Poison pill means shutdown
-                print
-                '%s: Exiting' % proc_name
+                # 可以退出
+
                 self.task_queue.task_done()
                 break
-            print
-            '%s: %s' % (proc_name, next_task)
+
             answer = next_task()
             self.task_queue.task_done()
             self.result_queue.put(answer)
@@ -52,11 +50,6 @@ def producer():
     for file in trainval_files:
         yield file
 
-
-async def consumer():
-    while True:
-        data = await queue.get()
-        print("file {} process now".format(data))
 
 
 def main():
@@ -82,8 +75,8 @@ def main():
 
     consumers = [Consumer(tasks, results)
                  for i in range(num_consumers)]
-    for w in consumers:
-        w.start()
+    for c in consumers:
+        c.start()
 
     # 入消息队列
 
