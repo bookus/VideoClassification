@@ -16,9 +16,11 @@ train_path = "lsvc2017/lsvc_train.txt"
 
 val_path = "lsvc2017/lsvc_val.txt"
 
+test_path = "lsvc2017/lsvc_test.txt"
+
 train_val_path = "/workspace/data/video/videos/trainval"
 
-test_path = "/workspace/data/video/videos/test"
+test_file_path = "/workspace/data/video/videos/test"
 
 trainval_map = {}
 trainvaltest_set_map = {}
@@ -71,8 +73,14 @@ class Consumer(multiprocessing.Process):
 
                 self.task_queue.task_done()
                 break
+            video_name = file.split('.')[0]
+            video_set = trainvaltest_set_map[video_name]
+            video_label = trainval_map[video_name]
 
             file_path = os.path.join(train_val_path, file)
+
+            if video_label == "-1":
+                file_path = os.path.join(test_file_path, file)
 
             cmd = './export_frames -i {} -interval 4 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
                                                                                                  self.temp_path)
@@ -84,11 +92,10 @@ class Consumer(multiprocessing.Process):
 
             for file in up_files:
                 # /[test/train/val]/[label]/[filename][frame/flow][序列].jpg
-                video_name = file.split('.')[0]
-                video_set = trainvaltest_set_map[video_name]
-                video_label = trainval_map[video_name]
+
                 new_file = video_set + '/' + video_label + '/' + file
-                os.rename(file, new_file)
+
+                os.rename(os.path.join(self.temp_path, file), os.path.join(self.temp_path, new_file))
 
             cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
             print("upload:", cmd)
@@ -103,6 +110,9 @@ class Consumer(multiprocessing.Process):
 
 def producer():
     trainval_files = os.listdir(train_val_path)
+    test_files = os.listdir(test_file_path)
+
+    trainval_files.extend(test_files)
 
     for file in trainval_files:
         yield file
@@ -112,17 +122,23 @@ def main():
     # 将label数据读入
     init()
 
-    with open(train_path, 'w') as f:
+    with open(train_path, 'r') as f:
         for line in f:
             split_list = split(line)
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'train'
 
-    with open(val_path, "w") as f:
+    with open(val_path, "r") as f:
         for line in f:
             split_list = split(line)
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'val'
+
+    with open(test_path, "r") as f:
+        for line in f:
+            split_list = split(line)
+            trainval_map[split_list[0]] = "-1"
+            trainvaltest_set_map[split_list[0]] = 'test'
 
     # 读取trainval文件列表
 
@@ -132,7 +148,7 @@ def main():
 
     # 开始 消费
     num_consumers = multiprocessing.cpu_count() * 2
-    #nump_consumers=100
+    # nump_consumers=100
     consumers = [Consumer(tasks, results, i)
                  for i in range(num_consumers)]
     for c in consumers:
