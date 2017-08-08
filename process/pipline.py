@@ -29,7 +29,7 @@ qupload_config_dir = "config/"
 
 def init():
     os.system('./qshell account {} {}'.format(ak, sk))
-    if not os.exists(qupload_config_dir):
+    if not os.path.exists(qupload_config_dir):
         os.mkdir(qupload_config_dir)
 
 
@@ -60,7 +60,6 @@ class Consumer(multiprocessing.Process):
         config_json = dict()
         config_json['src_dir'] = upload_dir
         config_json['bucket'] = bucket
-        config_json['key_prefix'] = ''
 
         qupload_config_file = os.path.join(qupload_config_dir, upload_dir + '.conf')
         with open(qupload_config_file, 'w') as f_out:
@@ -100,9 +99,10 @@ class Consumer(multiprocessing.Process):
 
                 os.rename(os.path.join(self.temp_path, file), os.path.join(self.temp_path, new_file))
 
-            cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
-            print("upload:", cmd)
-            os.system(cmd)
+            if len(up_files) > 0:
+                cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
+                print("upload:", cmd)
+                os.system(cmd)
 
             self.clean()
 
