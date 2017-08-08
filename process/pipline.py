@@ -61,13 +61,17 @@ class Consumer(multiprocessing.Process):
 
             cmd='./export_frames -i {} -interval 4 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,self.temp_path)
             print(cmd)
-
+            #执行算光流
             os.system(cmd)
 
             up_files=os.listdir(self.temp_path)
 
+            for file in up_files:
+                #/[test/train/val]/[label]/[filename][frame/flow][序列].jpg
 
-            os.system()
+
+
+                os.system()
 
             self.task_queue.task_done()
             self.result_queue.put(answer)
