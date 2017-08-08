@@ -25,9 +25,12 @@ test_file_path = "/workspace/data/video/videos/test"
 trainval_map = {}
 trainvaltest_set_map = {}
 
+qupload_config_dir = "config/"
 
 def init():
-    os.system('./qshell account {} {}', ak, sk)
+    os.system('./qshell account {} {}'.format(ak, sk))
+    if not os.exists(qupload_config_dir):
+        os.mkdir(qupload_config_dir)
 
 
 def split(line):
@@ -59,7 +62,7 @@ class Consumer(multiprocessing.Process):
         config_json['bucket'] = bucket
         config_json['key_prefix'] = ''
 
-        qupload_config_file = upload_dir + '.conf'
+        qupload_config_file = os.path.join(qupload_config_dir, upload_dir + '.conf')
         with open(qupload_config_file, 'w') as f_out:
             f_out.write(json.dumps(config_json, indent=4) + '\n')
         return qupload_config_file
@@ -148,7 +151,7 @@ def main():
 
     # 开始 消费
     num_consumers = multiprocessing.cpu_count() * 2
-    # nump_consumers=100
+    # num_consumers=100
     consumers = [Consumer(tasks, results, i)
                  for i in range(num_consumers)]
     for c in consumers:
