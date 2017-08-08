@@ -132,7 +132,7 @@ def main():
 
     # 开始 消费
     num_consumers = multiprocessing.cpu_count() * 2
-
+    #nump_consumers=100
     consumers = [Consumer(tasks, results, i)
                  for i in range(num_consumers)]
     for c in consumers:
