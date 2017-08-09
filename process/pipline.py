@@ -124,7 +124,7 @@ class Collector(multiprocessing.Process):
         self.result_queue = result_queue
 
     def run(self):
-        with open(log_file, 'w') as f:
+        with open(log_file, 'a+') as f:
             while True:
                 file = self.result_queue.get()
                 if file is None:
