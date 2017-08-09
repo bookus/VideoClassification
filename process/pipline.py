@@ -7,7 +7,7 @@ import shutil
 
 RESUME = False
 
-bucket = "mmimg"
+bucket = "mmflow"
 ak = "8MbTywnGQZ75BnWL9S1P8PZn-9wCqy6fIs4MyllI"
 sk = "XXXXXXX"
 
