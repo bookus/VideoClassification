@@ -24,6 +24,8 @@ test_file_path = "/workspace/data/video/videos/test"
 
 qupload_dir = "/workspace/data/video/videos"
 
+log_file = "log.txt"
+
 trainval_map = {}
 trainvaltest_set_map = {}
 
@@ -92,7 +94,6 @@ class Consumer(multiprocessing.Process):
 
             cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
                                                                                                   self.temp_path)
-            print("optical flow:", cmd)
             # 执行算光流
             os.system(cmd)
 
@@ -107,13 +108,31 @@ class Consumer(multiprocessing.Process):
 
             if len(up_files) > 0:
                 cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
-                print("upload:", cmd)
                 os.system(cmd)
 
             self.clean()
 
             self.task_queue.task_done()
             self.result_queue.put(file)
+        return
+
+
+class Collector(multiprocessing.Process):
+    def __init__(self, result_queue):
+        super(Collector, self).__init__()
+        self.result_queue = result_queue
+
+    def run(self):
+        with open(log_file, 'w') as f:
+            while True:
+                file = self.result_queue.get()
+                if file is None:
+                    break
+
+                f.write(file + "\n")
+
+                self.result_queue.task_done()
+
         return
 
 
@@ -177,6 +196,10 @@ def main():
         c.start()
 
     # 入消息队列
+
+    # 消息收集
+    collector = Collector(results)
+    collector.start()
 
     for file in producer():
         tasks.put(file)
