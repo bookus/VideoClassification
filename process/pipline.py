@@ -26,7 +26,7 @@ trainval_map = {}
 trainvaltest_set_map = {}
 
 qupload_config_dir = "./config/"
-
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 def init():
     os.system('./qshell account {} {}'.format(ak, sk))
     if not os.path.exists(qupload_config_dir):
@@ -75,6 +75,7 @@ class Consumer(multiprocessing.Process):
 
                 self.task_queue.task_done()
                 break
+
             video_name = file.split('.')[0]
             video_set = trainvaltest_set_map[video_name]
             video_label = trainval_map[video_name]
@@ -95,9 +96,9 @@ class Consumer(multiprocessing.Process):
             for file in up_files:
                 # /[test/train/val]/[label]/[filename][frame/flow][序列].jpg
 
-                new_file = video_set + '/' + video_label + '/' + file
+                new_file = video_set + '-' + video_label + '-' + file
 
-                os.rename(os.path.join(self.temp_path, file), os.path.join(self.temp_path, new_file))
+                os.system("mv {} {}".format(os.path.join(self.temp_path, file), os.path.join(self.temp_path, new_file)))
 
             if len(up_files) > 0:
                 cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
@@ -127,19 +128,19 @@ def main():
 
     with open(train_path, 'r') as f:
         for line in f:
-            split_list = split(line)
+            split_list = split(line.strip('\n'))
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'train'
 
     with open(val_path, "r") as f:
         for line in f:
-            split_list = split(line)
+            split_list = split(line.strip('\n'))
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'val'
 
     with open(test_path, "r") as f:
         for line in f:
-            split_list = split(line)
+            split_list = split(line.strip('\n'))
             trainval_map[split_list[0]] = "-1"
             trainvaltest_set_map[split_list[0]] = 'test'
 
@@ -150,7 +151,7 @@ def main():
     results = multiprocessing.Queue()
 
     # 开始 消费
-    num_consumers = multiprocessing.cpu_count() * 2
+    num_consumers = 100 #multiprocessing.cpu_count() * 2
     # num_consumers=100
     consumers = [Consumer(tasks, results, i)
                  for i in range(num_consumers)]
