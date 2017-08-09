@@ -95,7 +95,6 @@ class Consumer(multiprocessing.Process):
             if video_label == "-1":
                 file_path = os.path.join(test_file_path, file)
 
-            temp_path =
             cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
                                                                                                   self.temp_path)
             # 执行算光流
