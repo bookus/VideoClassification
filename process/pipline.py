@@ -51,7 +51,7 @@ class Consumer(multiprocessing.Process):
 
         self.temp_path = os.path.join(qupload_dir, "temp" + str(ID))
         os.mkdir(self.temp_path)
-        self.qupload_config_file = self.write_qupload_config_file("temp"+str(ID))
+        self.qupload_config_file = self.write_qupload_config_file("temp" + str(ID))
 
     def upload(self, file, key):
         file_path = self.temp_path + "/" + file
@@ -98,14 +98,15 @@ class Consumer(multiprocessing.Process):
 
             up_files = os.listdir(self.temp_path)
 
-            for file in up_files:
+            for upfile in up_files:
                 # /[test/train/val]/[label]/[filename][frame/flow][序列].jpg
 
-                new_file = video_set + '-' + video_label + '-' + file
+                new_file = video_set + '-' + video_label + '-' + upfile
 
-                os.system("mv {} {}".format(os.path.join(self.temp_path, file), os.path.join(self.temp_path, new_file)))
+                os.system(
+                    "mv {} {}".format(os.path.join(self.temp_path, upfile), os.path.join(self.temp_path, new_file)))
 
-            if len(up_files) > 0:
+            if up_files:
                 cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
                 os.system(cmd)
 
