@@ -64,10 +64,11 @@ class Consumer(multiprocessing.Process):
 
     def write_qupload_config_file(self, upload_dir):
         config_json = dict()
-        config_json['src_dir'] = upload_dir
         config_json['bucket'] = bucket
+        config_json['src_dir'] = self.temp_path
 
         qupload_config_file = os.path.join(qupload_config_dir, upload_dir + '.conf')
+
         with open(qupload_config_file, 'w') as f_out:
             f_out.write(json.dumps(config_json, indent=4) + '\n')
         return qupload_config_file
