@@ -53,10 +53,6 @@ class Consumer(multiprocessing.Process):
         os.mkdir(self.temp_path)
         self.qupload_config_file = self.write_qupload_config_file("temp" + str(ID))
 
-    def upload(self, file, key):
-        file_path = self.temp_path + "/" + file
-        cmd = './qrsctl put -c {}  '
-        os.system()
 
     def clean(self):
         shutil.rmtree(self.temp_path)
@@ -66,6 +62,7 @@ class Consumer(multiprocessing.Process):
         config_json = dict()
         config_json['bucket'] = bucket
         config_json['src_dir'] = self.temp_path
+        config_json['delete_on_success'] = 'true'
 
         qupload_config_file = os.path.join(qupload_config_dir, upload_dir + '.conf')
 
@@ -111,7 +108,6 @@ class Consumer(multiprocessing.Process):
                 cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
                 os.system(cmd)
 
-            self.clean()
 
             self.task_queue.task_done()
             self.result_queue.put(file)
