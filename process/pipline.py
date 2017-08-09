@@ -21,21 +21,25 @@ train_val_path = "/workspace/data/video/videos/trainval"
 
 test_file_path = "/workspace/data/video/videos/test"
 
-qupload_dir = "/workspace/data/video/videos"
+qupload_dir = "/workspace/data/video/videos/temp"
+
+qupload_config_dir = "./config/"
 
 log_file = "log.txt"
 
 trainval_map = {}
 trainvaltest_set_map = {}
 
-qupload_config_dir = "./config/"
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 def init():
-    os.system('./qshell account {} {}'.format(ak, sk))
+    #os.system('./qshell account {} {}'.format(ak, sk))
     if not os.path.exists(qupload_config_dir):
         os.mkdir(qupload_config_dir)
+    if not os.path.exists(qupload_dir):
+        os.mkdir(qupload_dir)
 
 
 def split(line):
@@ -48,12 +52,9 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.ID = ID
+        #self.qupload_config_file = self.write_qupload_config_file("temp" + str(ID))
 
-        self.temp_path = os.path.join(qupload_dir, "temp" + str(ID))
-        os.mkdir(self.temp_path)
-        self.qupload_config_file = self.write_qupload_config_file("temp" + str(ID))
-
-
+    """
     def clean(self):
         shutil.rmtree(self.temp_path)
         os.mkdir(self.temp_path)
@@ -69,6 +70,7 @@ class Consumer(multiprocessing.Process):
         with open(qupload_config_file, 'w') as f_out:
             f_out.write(json.dumps(config_json, indent=4) + '\n')
         return qupload_config_file
+    """
 
     def run(self):
         proc_name = self.name
@@ -102,11 +104,11 @@ class Consumer(multiprocessing.Process):
                 new_file = video_set + '-' + video_label + '-' + upfile
 
                 os.system(
-                    "mv {} {}".format(os.path.join(self.temp_path, upfile), os.path.join(self.temp_path, new_file)))
+                    "mv {} {}".format(os.path.join(qupload_dir, upfile), os.path.join(qupload_dir, new_file)))
 
-            if up_files:
-                cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
-                os.system(cmd)
+            #if up_files:
+            #    cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
+            #    os.system(cmd)
 
 
             self.task_queue.task_done()
