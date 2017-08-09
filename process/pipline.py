@@ -6,6 +6,7 @@ import json
 import shutil
 
 
+RESUME = False
 bucket = "mmimg"
 ak = "8MbTywnGQZ75BnWL9S1P8PZn-9wCqy6fIs4MyllI"
 sk = "XXXXXXX"
@@ -43,7 +44,7 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.ID = ID
-        self.temp_path = os.path.join(qupload_config_dir, "temp" + str(ID))
+        self.temp_path = os.path.join(qupload_dir, "temp" + str(ID))
         os.mkdir(self.temp_path)
         self.qupload_config_file = self.write_qupload_config_file(self.temp_path)
 
@@ -126,21 +127,34 @@ def main():
     # 将label数据读入
     init()
 
+    if RESUME:
+        with open(log_file, 'r') as f:
+            processed_files = [line.strip('\n').split('.')[0] for line in f]
+
     with open(train_path, 'r') as f:
         for line in f:
             split_list = split(line.strip('\n'))
+            if RESUME:
+                if split_list[0] in processed_files:
+                    continue
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'train'
 
     with open(val_path, "r") as f:
         for line in f:
             split_list = split(line.strip('\n'))
+            if RESUME:
+                if split_list[0] in processed_files:
+                    continue
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'val'
 
     with open(test_path, "r") as f:
         for line in f:
             split_list = split(line.strip('\n'))
+            if RESUME:
+                if split_list[0] in processed_files:
+                    continue
             trainval_map[split_list[0]] = "-1"
             trainvaltest_set_map[split_list[0]] = 'test'
 
