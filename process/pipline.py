@@ -131,8 +131,6 @@ class Collector(multiprocessing.Process):
 
                 f.write(file + "\n")
 
-                self.result_queue.task_done()
-
         return
 
 
