@@ -62,7 +62,7 @@ class Consumer(multiprocessing.Process):
         config_json = dict()
         config_json['bucket'] = bucket
         config_json['src_dir'] = self.temp_path
-        config_json['delete_on_success'] = 'true'
+        config_json['delete_on_success'] = True
 
         qupload_config_file = os.path.join(qupload_config_dir, upload_dir + '.conf')
 
