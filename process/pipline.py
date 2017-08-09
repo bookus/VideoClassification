@@ -51,7 +51,7 @@ class Consumer(multiprocessing.Process):
 
         self.temp_path = os.path.join(qupload_dir, "temp" + str(ID))
         os.mkdir(self.temp_path)
-        self.qupload_config_file = self.write_qupload_config_file(self.temp_path)
+        self.qupload_config_file = self.write_qupload_config_file("temp"+str(ID))
 
     def upload(self, file, key):
         file_path = self.temp_path + "/" + file
