@@ -7,6 +7,7 @@ import shutil
 
 
 RESUME = False
+
 bucket = "mmimg"
 ak = "8MbTywnGQZ75BnWL9S1P8PZn-9wCqy6fIs4MyllI"
 sk = "XXXXXXX"
@@ -21,13 +22,15 @@ train_val_path = "/workspace/data/video/videos/trainval"
 
 test_file_path = "/workspace/data/video/videos/test"
 
-qupload_dir = "/workspace/data/upload_imgs/"
+qupload_dir = "/workspace/data/video/videos"
 
 trainval_map = {}
 trainvaltest_set_map = {}
 
 qupload_config_dir = "./config/"
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+
 def init():
     os.system('./qshell account {} {}'.format(ak, sk))
     if not os.path.exists(qupload_config_dir):
@@ -44,6 +47,7 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.ID = ID
+
         self.temp_path = os.path.join(qupload_dir, "temp" + str(ID))
         os.mkdir(self.temp_path)
         self.qupload_config_file = self.write_qupload_config_file(self.temp_path)
@@ -86,8 +90,8 @@ class Consumer(multiprocessing.Process):
             if video_label == "-1":
                 file_path = os.path.join(test_file_path, file)
 
-            cmd = './export_frames -i {} -interval 4 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
-                                                                                                 self.temp_path)
+            cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
+                                                                                                  self.temp_path)
             print("optical flow:", cmd)
             # 执行算光流
             os.system(cmd)
@@ -165,7 +169,7 @@ def main():
     results = multiprocessing.Queue()
 
     # 开始 消费
-    num_consumers = 100 #multiprocessing.cpu_count() * 2
+    num_consumers = 100  # multiprocessing.cpu_count() * 2
     # num_consumers=100
     consumers = [Consumer(tasks, results, i)
                  for i in range(num_consumers)]
