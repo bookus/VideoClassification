@@ -143,7 +143,13 @@ def producer():
 
     trainval_files.extend(test_files)
 
+    if RESUME:
+        with open(log_file, 'r') as f:
+            processed_files = [line.strip('\n') for line in f]
+
     for file in trainval_files:
+        if RESUME and file in processed_files:
+            continue
         yield file
 
 
@@ -151,31 +157,23 @@ def main():
     # 将label数据读入
     init()
 
-    if RESUME:
-        with open(log_file, 'r') as f:
-            processed_files = [line.strip('\n').split('.')[0] for line in f]
+
 
     with open(train_path, 'r') as f:
         for line in f:
             split_list = split(line.strip('\n'))
-            if RESUME and split_list[0] in processed_files:
-                continue
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'train'
 
     with open(val_path, "r") as f:
         for line in f:
             split_list = split(line.strip('\n'))
-            if RESUME and split_list[0] in processed_files:
-                continue
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'val'
 
     with open(test_path, "r") as f:
         for line in f:
             split_list = split(line.strip('\n'))
-            if RESUME and split_list[0] in processed_files:
-                continue
             trainval_map[split_list[0]] = "-1"
             trainvaltest_set_map[split_list[0]] = 'test'
 
