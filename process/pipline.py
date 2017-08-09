@@ -5,7 +5,6 @@ import time
 import json
 import shutil
 
-
 RESUME = False
 
 bucket = "mmimg"
@@ -157,27 +156,24 @@ def main():
     with open(train_path, 'r') as f:
         for line in f:
             split_list = split(line.strip('\n'))
-            if RESUME:
-                if split_list[0] in processed_files:
-                    continue
+            if RESUME and split_list[0] in processed_files:
+                continue
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'train'
 
     with open(val_path, "r") as f:
         for line in f:
             split_list = split(line.strip('\n'))
-            if RESUME:
-                if split_list[0] in processed_files:
-                    continue
+            if RESUME and split_list[0] in processed_files:
+                continue
             trainval_map[split_list[0]] = split_list[1]
             trainvaltest_set_map[split_list[0]] = 'val'
 
     with open(test_path, "r") as f:
         for line in f:
             split_list = split(line.strip('\n'))
-            if RESUME:
-                if split_list[0] in processed_files:
-                    continue
+            if RESUME and split_list[0] in processed_files:
+                continue
             trainval_map[split_list[0]] = "-1"
             trainvaltest_set_map[split_list[0]] = 'test'
 
