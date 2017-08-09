@@ -20,10 +20,12 @@ train_val_path = "/workspace/data/video/videos/trainval"
 
 test_file_path = "/workspace/data/video/videos/test"
 
+qupload_dir = "/workspace/data/upload_imgs/"
+
 trainval_map = {}
 trainvaltest_set_map = {}
 
-qupload_config_dir = "config/"
+qupload_config_dir = "./config/"
 
 def init():
     os.system('./qshell account {} {}'.format(ak, sk))
@@ -41,7 +43,7 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.ID = ID
-        self.temp_path = "./temp" + str(ID)
+        self.temp_path = os.path.join(qupload_config_dir, "temp" + str(ID))
         os.mkdir(self.temp_path)
         self.qupload_config_file = self.write_qupload_config_file(self.temp_path)
 
