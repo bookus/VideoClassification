@@ -21,7 +21,8 @@ train_val_path = "/workspace/data/video/videos/trainval"
 
 test_file_path = "/workspace/data/video/videos/test"
 
-qupload_dir = "/workspace/data/video/videos/temp"
+qupload_dir = "/workspace/mmflow-data/upload"
+temp_dir = "/workspace/mmflow-data/temp"
 
 qupload_config_dir = "./config/"
 
@@ -52,6 +53,9 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.ID = ID
+        self.temp_path = temp_dir + str(ID)
+        if not os.path.exists(self.temp_path):
+            os.mkdir(self.temp_path)
         #self.qupload_config_file = self.write_qupload_config_file("temp" + str(ID))
 
     """
@@ -91,12 +95,13 @@ class Consumer(multiprocessing.Process):
             if video_label == "-1":
                 file_path = os.path.join(test_file_path, file)
 
+            temp_path =
             cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
-                                                                                                  qupload_dir)
+                                                                                                  self.temp_path)
             # 执行算光流
             os.system(cmd)
 
-            up_files = os.listdir(qupload_dir)
+            up_files = os.listdir(self.temp_path)
 
             for upfile in up_files:
                 # /[test/train/val]/[label]/[filename][frame/flow][序列].jpg
@@ -104,7 +109,7 @@ class Consumer(multiprocessing.Process):
                 new_file = video_set + '-' + video_label + '-' + upfile
 
                 os.system(
-                    "mv {} {}".format(os.path.join(qupload_dir, upfile), os.path.join(qupload_dir, new_file)))
+                    "mv {} {}".format(os.path.join(self.temp_path, upfile), os.path.join(qupload_dir, new_file)))
 
             #if up_files:
             #    cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
