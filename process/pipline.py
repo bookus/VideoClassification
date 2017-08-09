@@ -92,11 +92,11 @@ class Consumer(multiprocessing.Process):
                 file_path = os.path.join(test_file_path, file)
 
             cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
-                                                                                                  self.temp_path)
+                                                                                                  qupload_dir)
             # 执行算光流
             os.system(cmd)
 
-            up_files = os.listdir(self.temp_path)
+            up_files = os.listdir(qupload_dir)
 
             for upfile in up_files:
                 # /[test/train/val]/[label]/[filename][frame/flow][序列].jpg
