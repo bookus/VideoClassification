@@ -21,184 +21,189 @@ train_val_path = "/workspace/data/video/videos/trainval"
 
 test_file_path = "/workspace/data/video/videos/test"
 
-qupload_dir = "/workspace/data/video/videos"
+qupload_dir = "/workspace/mmflow-data/upload"
+temp_dir = "/workspace/mmflow-data/temp"
+
+qupload_config_dir = "./config/"
 
 log_file = "log.txt"
 
 trainval_map = {}
 trainvaltest_set_map = {}
 
-qupload_config_dir = "./config/"
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 def init():
-    os.system('./qshell account {} {}'.format(ak, sk))
-    if not os.path.exists(qupload_config_dir):
-        os.mkdir(qupload_config_dir)
+	#os.system('./qshell account {} {}'.format(ak, sk))
+	if not os.path.exists(qupload_config_dir):
+		os.mkdir(qupload_config_dir)
+	if not os.path.exists(qupload_dir):
+		os.mkdir(qupload_dir)
 
 
 def split(line):
-    return line.split(',', 1)
+	return line.split(',', 1)
 
 
 class Consumer(multiprocessing.Process):
-    def __init__(self, task_queue, result_queue, ID):
-        multiprocessing.Process.__init__(self)
-        self.task_queue = task_queue
-        self.result_queue = result_queue
-        self.ID = ID
+	def __init__(self, task_queue, result_queue, ID):
+		multiprocessing.Process.__init__(self)
+		self.task_queue = task_queue
+		self.result_queue = result_queue
+		self.ID = ID
+		self.temp_path = temp_dir
+		if not os.path.exists(self.temp_path):
+			os.mkdir(self.temp_path)
+		#self.qupload_config_file = self.write_qupload_config_file("temp" + str(ID))
 
-        self.temp_path = os.path.join(qupload_dir, "temp" + str(ID))
-        os.mkdir(self.temp_path)
-        self.qupload_config_file = self.write_qupload_config_file("temp" + str(ID))
+	"""
+	def clean(self):
+		shutil.rmtree(self.temp_path)
+		os.mkdir(self.temp_path)
 
+	def write_qupload_config_file(self, upload_dir):
+		config_json = dict()
+		config_json['bucket'] = bucket
+		config_json['src_dir'] = self.temp_path
+		config_json['delete_on_success'] = True
 
-    def clean(self):
-        shutil.rmtree(self.temp_path)
-        os.mkdir(self.temp_path)
+		qupload_config_file = os.path.join(qupload_config_dir, upload_dir + '.conf')
 
-    def write_qupload_config_file(self, upload_dir):
-        config_json = dict()
-        config_json['bucket'] = bucket
-        config_json['src_dir'] = self.temp_path
-        config_json['delete_on_success'] = True
+		with open(qupload_config_file, 'w') as f_out:
+			f_out.write(json.dumps(config_json, indent=4) + '\n')
+		return qupload_config_file
+	"""
 
-        qupload_config_file = os.path.join(qupload_config_dir, upload_dir + '.conf')
+	def run(self):
+		proc_name = self.name
+		while True:
+			file = self.task_queue.get()
+			if file is None:
+				# 可以退出
 
-        with open(qupload_config_file, 'w') as f_out:
-            f_out.write(json.dumps(config_json, indent=4) + '\n')
-        return qupload_config_file
+				self.task_queue.task_done()
+				break
 
-    def run(self):
-        proc_name = self.name
-        while True:
-            file = self.task_queue.get()
-            if file is None:
-                # 可以退出
+			video_name = file.split('.')[0]
+			video_set = trainvaltest_set_map[video_name]
+			video_label = trainval_map[video_name]
 
-                self.task_queue.task_done()
-                break
+			file_path = os.path.join(train_val_path, file)
 
-            video_name = file.split('.')[0]
-            video_set = trainvaltest_set_map[video_name]
-            video_label = trainval_map[video_name]
+			if video_label == "-1":
+				file_path = os.path.join(test_file_path, file)
 
-            file_path = os.path.join(train_val_path, file)
+			cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
+																								  self.temp_path)
+			# 执行算光流
+			os.system(cmd)
 
-            if video_label == "-1":
-                file_path = os.path.join(test_file_path, file)
+			"""
+			up_files = os.listdir(self.temp_path)
 
-            cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
-                                                                                                  self.temp_path)
-            # 执行算光流
-            os.system(cmd)
+			for upfile in up_files:
+				# /[test/train/val]/[label]/[filename][frame/flow][序列].jpg
 
-            up_files = os.listdir(self.temp_path)
+				new_file = video_set + '-' + video_label + '-' + upfile
 
-            for upfile in up_files:
-                # /[test/train/val]/[label]/[filename][frame/flow][序列].jpg
+				os.system(
+					"mv {} {}".format(os.path.join(self.temp_path, upfile), os.path.join(qupload_dir, new_file)))
+			"""
 
-                new_file = video_set + '-' + video_label + '-' + upfile
+			#if up_files:
+			#    cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
+			#    os.system(cmd)
 
-                os.system(
-                    "mv {} {}".format(os.path.join(self.temp_path, upfile), os.path.join(self.temp_path, new_file)))
-
-            if up_files:
-                cmd = './qshell qupload {} {}'.format(len(up_files), self.qupload_config_file)
-                os.system(cmd)
-
-
-            self.task_queue.task_done()
-            self.result_queue.put(file)
-        return
+			self.task_queue.task_done()
+			self.result_queue.put(file)
+		return
 
 
 class Collector(multiprocessing.Process):
-    def __init__(self, result_queue):
-        super(Collector, self).__init__()
-        self.result_queue = result_queue
+	def __init__(self, result_queue):
+		super(Collector, self).__init__()
+		self.result_queue = result_queue
 
-    def run(self):
-        with open(log_file, 'a+') as f:
-            while True:
-                file = self.result_queue.get()
-                if file is None:
-                    break
+	def run(self):
+		with open(log_file, 'a+') as f:
+			while True:
+				file = self.result_queue.get()
+				if file is None:
+					break
 
-                f.write(file + "\n")
+				f.write(file + "\n")
 
-        return
+		return
 
 
 def producer():
-    trainval_files = os.listdir(train_val_path)
-    test_files = os.listdir(test_file_path)
+	trainval_files = os.listdir(train_val_path)
+	test_files = os.listdir(test_file_path)
 
-    trainval_files.extend(test_files)
+	trainval_files.extend(test_files)
 
-    for file in trainval_files:
-        yield file
+	if RESUME:
+		with open(log_file, 'r') as f:
+			processed_files = [line.strip('\n') for line in f]
+
+	for file in trainval_files:
+		if RESUME and file in processed_files:
+			continue
+		yield file
 
 
 def main():
-    # 将label数据读入
-    init()
+	# 将label数据读入
+	init()
 
-    if RESUME:
-        with open(log_file, 'r') as f:
-            processed_files = [line.strip('\n').split('.')[0] for line in f]
 
-    with open(train_path, 'r') as f:
-        for line in f:
-            split_list = split(line.strip('\n'))
-            if RESUME and split_list[0] in processed_files:
-                continue
-            trainval_map[split_list[0]] = split_list[1]
-            trainvaltest_set_map[split_list[0]] = 'train'
 
-    with open(val_path, "r") as f:
-        for line in f:
-            split_list = split(line.strip('\n'))
-            if RESUME and split_list[0] in processed_files:
-                continue
-            trainval_map[split_list[0]] = split_list[1]
-            trainvaltest_set_map[split_list[0]] = 'val'
+	with open(train_path, 'r') as f:
+		for line in f:
+			split_list = split(line.strip('\n'))
+			trainval_map[split_list[0]] = split_list[1]
+			trainvaltest_set_map[split_list[0]] = 'train'
 
-    with open(test_path, "r") as f:
-        for line in f:
-            split_list = split(line.strip('\n'))
-            if RESUME and split_list[0] in processed_files:
-                continue
-            trainval_map[split_list[0]] = "-1"
-            trainvaltest_set_map[split_list[0]] = 'test'
+	with open(val_path, "r") as f:
+		for line in f:
+			split_list = split(line.strip('\n'))
+			trainval_map[split_list[0]] = split_list[1]
+			trainvaltest_set_map[split_list[0]] = 'val'
 
-    # 读取trainval文件列表
+	with open(test_path, "r") as f:
+		for line in f:
+			split_list = split(line.strip('\n'))
+			trainval_map[split_list[0]] = "-1"
+			trainvaltest_set_map[split_list[0]] = 'test'
 
-    # 创建消息队列
-    tasks = multiprocessing.JoinableQueue()
-    results = multiprocessing.Queue()
+	# 读取trainval文件列表
 
-    # 开始 消费
-    num_consumers = 100  # multiprocessing.cpu_count() * 2
-    # num_consumers=100
-    consumers = [Consumer(tasks, results, i)
-                 for i in range(num_consumers)]
-    for c in consumers:
-        c.start()
+	# 创建消息队列
+	tasks = multiprocessing.JoinableQueue()
+	results = multiprocessing.Queue()
 
-    # 入消息队列
+	# 开始 消费
+	num_consumers = multiprocessing.cpu_count()
+	# num_consumers=100
+	consumers = [Consumer(tasks, results, i)
+				 for i in range(num_consumers)]
+	for c in consumers:
+		c.start()
 
-    # 消息收集
-    collector = Collector(results)
-    collector.start()
+	# 入消息队列
 
-    for file in producer():
-        tasks.put(file)
+	# 消息收集
+	collector = Collector(results)
+	collector.start()
 
-    # Wait for all of the tasks to finish
-    tasks.join()
+	for file in producer():
+		tasks.put(file)
+
+	# Wait for all of the tasks to finish
+	tasks.join()
 
 
 if __name__ == "__main__":
-    main()
+	main()
