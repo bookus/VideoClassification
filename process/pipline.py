@@ -23,8 +23,7 @@ train_val_path = "/workspace/data/video/videos/trainval"
 
 test_file_path = "/workspace/data/video/videos/test"
 
-qupload_dir = "/workspace/mmflow-data/upload"
-temp_dir = "/workspace/mmflow-data/temp"
+image_root = "/workspace/mmflow-data/flowimages"
 
 qupload_config_dir = "./config/"
 
@@ -38,8 +37,18 @@ def init():
     # os.system('./qshell account {} {}'.format(ak, sk))
     if not os.path.exists(qupload_config_dir):
         os.mkdir(qupload_config_dir)
-    if not os.path.exists(qupload_dir):
-        os.mkdir(qupload_dir)
+    if not os.path.exists(image_root):
+        os.mkdir(image_root)
+
+    train_image_root = os.path.join(image_root, 'train')
+    if not os.path.exists(train_image_root):
+        os.mkdir(train_image_root)
+    val_image_root = os.path.join(image_root, 'val')
+    if not os.path.exists(val_image_root):
+        os.mkdir(val_image_root)
+    test_image_root = os.path.join(image_root, 'test')
+    if not os.path.exists(test_image_root):
+        os.mkdir(test_image_root)
 
 
 def split(line):
@@ -52,9 +61,6 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.ID = ID
-        self.temp_path = temp_dir
-        if not os.path.exists(self.temp_path):
-            os.mkdir(self.temp_path)
 
     def run(self):
         proc_name = self.name
@@ -66,13 +72,14 @@ class Consumer(multiprocessing.Process):
                 break
 
             video_name = file.split('.')[0]
+            train_or_not = trainvaltest_set_map[video_name]
+            img_save_dir = os.path.join(image_root, train_or_not, video_name)
+            os.mkdir(img_save_dir)
 
-            file_path = os.path.join(train_val_path, file)
-            dest_dir = os.path.join(self.temp_path, video_name)
-            os.mkdir(dest_dir)
+            video_file_path = os.path.join(train_val_path, file)
 
-            cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(file_path,
-                                                                                                  dest_dir)
+            cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(video_file_path,
+                                                                                                  img_save_dir)
             # 执行算光流
             os.system(cmd)
 
@@ -108,9 +115,7 @@ def producer():
         files = os.listdir(train_val_path)
     else:
         files = os.listdir(test_file_path)
-    # test_files = os.listdir(test_file_path)
 
-    # trainval_files.extend(test_files)
     processed_files = []
 
     if RESUME:
