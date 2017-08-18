@@ -9,10 +9,6 @@ RESUME = False
 
 TRAIN = True
 
-bucket = "mmflow"
-ak = "8MbTywnGQZ75BnWL9S1P8PZn-9wCqy6fIs4MyllI"
-sk = "XXXXXXX"
-
 train_path = "lsvc2017/lsvc_train.txt"
 
 val_path = "lsvc2017/lsvc_val.txt"
@@ -78,8 +74,8 @@ class Consumer(multiprocessing.Process):
 
             video_file_path = os.path.join(train_val_path, file)
 
-            cmd = './export_frames -i {} -interval 10 -c 21 -o {} -s 256x256 -postfix jpg'.format(video_file_path,
-                                                                                                  img_save_dir)
+            cmd = './export_frames -i {} -ss 0 -interval 1 -c 11 -o {} -s 256x256 -postfix jpg'.format(video_file_path,
+                                                                                                       img_save_dir)
             # 执行算光流
             os.system(cmd)
 
